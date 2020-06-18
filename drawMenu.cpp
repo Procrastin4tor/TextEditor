@@ -143,38 +143,39 @@ void drawSaveError()
 			switch (iKey)
 			{
 			case KEY_ARROW_RIGHT:
+
+				itemMenu(saveErrorOptions, (int)sel, false);
+
 				if ((int)sel < numSaveErrorOptions - 1)
 				{
-					itemMenu(saveErrorOptions, (int)sel, false);
 					sel = (SaveErrorOptionsItems)((int)sel + 1);
-					itemMenu(saveErrorOptions, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(saveErrorOptions, (int)sel, false);
 					sel = SaveErrorOptionsItems::MNUCREATE;
-					itemMenu(saveErrorOptions, (int)sel, true);
 				}
+				itemMenu(saveErrorOptions, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ARROW_LEFT:
+
+				itemMenu(saveErrorOptions, (int)sel, false);
+
 				if ((int)sel > 0)
 				{
-					itemMenu(saveErrorOptions, (int)sel, false);
 					sel = (SaveErrorOptionsItems)((int)sel - 1);
-					itemMenu(saveErrorOptions, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(saveErrorOptions, (int)sel, false);
 					sel = SaveErrorOptionsItems::MNUSAVEAS;
-					itemMenu(saveErrorOptions, (int)sel, true);
 				}
+				itemMenu(saveErrorOptions, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ENTER:
+
 				gotoxy(curspos.X, curspos.Y);
 				SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 				showCursor(true);
@@ -216,11 +217,6 @@ void drawSaveChanges()
 	{
 		return;
 	}
-
-	/*SetConsoleCursorPosition(hStdOutM, { 0,1 });
-	SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
-	cout << "Do you really want to exit?";*/
-
 	saveChangesItems sel = saveChangesItems::MNUNO;
 
 	SetConsoleTextAttribute(hStdOutM, inactiveItemAttributes);
@@ -249,38 +245,39 @@ void drawSaveChanges()
 			switch (iKey)
 			{
 			case KEY_ARROW_RIGHT:
+
+				itemMenu(saveChanges, (int)sel, false);
+
 				if ((int)sel < numSaveChanges - 1)
 				{
-					itemMenu(saveChanges, (int)sel, false);
 					sel = (saveChangesItems)((int)sel + 1);
-					itemMenu(saveChanges, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(saveChanges, (int)sel, false);
 					sel = saveChangesItems::MNUYES;
-					itemMenu(saveChanges, (int)sel, true);
 				}
+				itemMenu(saveChanges, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ARROW_LEFT:
+				
+				itemMenu(saveChanges, (int)sel, false);
+				
 				if ((int)sel > 0)
 				{
-					itemMenu(saveChanges, (int)sel, false);
 					sel = (saveChangesItems)((int)sel - 1);
-					itemMenu(saveChanges, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(saveChanges, (int)sel, false);
-					sel = saveChangesItems::MNUNO;
-					itemMenu(saveChanges, (int)sel, true);
+					sel = saveChangesItems::MNUNO;		
 				}
+				itemMenu(saveChanges, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ENTER:
+
 				gotoxy(curspos.X, curspos.Y);
 				SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 				showCursor(true);
@@ -306,15 +303,6 @@ void drawSaveChanges()
 				case saveChangesItems::MNUNO:	
 					
 					menuIsActive = false;
-
-					if (createIsActive)
-					{
-						//saveChangesForCreate = true;
-					}
-					else if (openIsActive)
-					{
-						//saveChange = true;
-					}	
 					saveIsActive = false;
 					saveAsIsActive = false;
 					return;
@@ -367,8 +355,7 @@ void drawFileOptions()
 	int iKey = 67;
 
 	while (1)
-	{
-		
+	{	
 		if (_kbhit())
 		{
 			iKey = _getch();
@@ -381,38 +368,39 @@ void drawFileOptions()
 				return;
 
 			case KEY_ARROW_RIGHT:
+				
+				itemMenu(fileOptions, (int)sel, false);
+
 				if ((int)sel < numFileOptions - 1)
 				{
-					itemMenu(fileOptions, (int)sel, false);
 					sel = (FileOptionsItems)((int)sel + 1);
-					itemMenu(fileOptions, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(fileOptions, (int)sel, false);
 					sel = FileOptionsItems::MNUEDIT;
-					itemMenu(fileOptions, (int)sel, true);
 				}
+				itemMenu(fileOptions, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ARROW_LEFT:
+
+				itemMenu(fileOptions, (int)sel, false);
+
 				if ((int)sel > 0)
 				{
-					itemMenu(fileOptions, (int)sel, false);
 					sel = (FileOptionsItems)((int)sel - 1);
-					itemMenu(fileOptions, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(fileOptions, (int)sel, false);
 					sel = FileOptionsItems::MNUSAVEAS;
-					itemMenu(fileOptions, (int)sel, true);
 				}
+				itemMenu(fileOptions, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ENTER:
+
 				gotoxy(curspos.X, curspos.Y);
 				SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 				showCursor(true);
@@ -463,7 +451,6 @@ void drawFileOptions()
 
 void drawHelp()
 {
-	
 	helpItems sel = helpItems::MNUOK;
 
 	SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
@@ -541,38 +528,39 @@ void drawExit()
 			switch (iKey)
 			{
 			case KEY_ARROW_RIGHT:
+				
+				itemMenu(Exit, (int)sel, false);
+				
 				if ((int)sel < numExit - 1)
-				{
-					itemMenu(Exit, (int)sel, false);
+				{	
 					sel = (exitItems)((int)sel + 1);
-					itemMenu(Exit, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(Exit, (int)sel, false);
 					sel = exitItems::MNUYES;
-					itemMenu(Exit, (int)sel, true);
 				}
+				itemMenu(Exit, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ARROW_LEFT:
+				
+				itemMenu(Exit, (int)sel, false);
+				
 				if ((int)sel > 0)
 				{
-					itemMenu(Exit, (int)sel, false);
 					sel = (exitItems)((int)sel - 1);
-					itemMenu(Exit, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(Exit, (int)sel, false);
 					sel = exitItems::MNUNO;
-					itemMenu(Exit, (int)sel, true);
 				}
+				itemMenu(Exit, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ENTER:
+
 				gotoxy(curspos.X, curspos.Y);
 				SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 				showCursor(true);
@@ -644,38 +632,39 @@ void DrawMenu()
 			switch (iKey)
 			{
 			case KEY_ARROW_RIGHT:
+
+				itemMenu(menu, (int)sel, false);
+
 				if ((int)sel < numMenu - 1)
 				{
-					itemMenu(menu, (int)sel, false);
 					sel = (menuItems)((int)sel + 1);
-					itemMenu(menu, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(menu, (int)sel, false);
 					sel = menuItems::MNUFILE;
-					itemMenu(menu, (int)sel, true);
 				}
+				itemMenu(menu, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ARROW_LEFT:
+
+				itemMenu(menu, (int)sel, false);
+				
 				if ((int)sel > 0)
 				{
-					itemMenu(menu, (int)sel, false);
 					sel = (menuItems)((int)sel - 1);
-					itemMenu(menu, (int)sel, true);
 				}
 				else
 				{
-					itemMenu(menu, (int)sel, false);
 					sel = menuItems::MNUEXIT;
-					itemMenu(menu, (int)sel, true);
 				}
+				itemMenu(menu, (int)sel, true);
 				showCursor(false);
 				break;
 
 			case KEY_ENTER:
+
 				gotoxy(curspos.X, curspos.Y);
 				SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 				showCursor(true);

@@ -22,7 +22,8 @@ extern WORD workWindowAttributes;
 ifstream file;
 
 bool menuIsActive = true;
-bool editIsActive = false, openIsActive = false, createIsActive = false, saveIsActive = false, saveAsIsActive = false, specOptionsIsActive = false,
+bool editIsActive = false, openIsActive = false, createIsActive = false, 
+saveIsActive = false, saveAsIsActive = false, specOptionsIsActive = false, 
 deleteIsActive = false;
 bool firstEnter = true;
 bool saveChangesForCreate = false, saveChangesForOpen = false;
@@ -69,32 +70,188 @@ void ClearScreenBuffer(const vector <string>& textFile)
 	SetConsoleCursorPosition(hStdOutM, { 0,2 });
 	SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 
-	for (int i = 0; i < textFile.size(); i++)
+	if (!textFile.empty())
 	{
-		cout << textFile[i] << endl;
+		for (int i = 0; i < textFile.size(); i++)
+		{
+			cout << textFile[i] << endl;
+		}
 	}
 	CleanScreenBufferIsActive = false;
 }
 
-void ClearAllScreenBuffer()
+void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
+	string& text, COORD& cursorPos)
 {
-	SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
-	SetConsoleCursorPosition(hStdOutM, { 0,2 });
+	SetConsoleCursorPosition(hStdOut, cursorPos);
 
-	system("cls");
+	key = _getch();
 
-	CleanScreenBufferIsActive = true;
-	menuIsActive = true;
+	if (isprint(key))
+	{
 
-	DrawMenu();
+		if (cursorPos.X < 120)
+		{
+			cursorPos.X++;
+		}
+		else
+		{
+			cursorPos.X = 0;
+			cursorPos.Y++;
+		}
 
-	SetConsoleCursorPosition(hStdOutM, { 0,2 });
-	SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
-	CleanScreenBufferIsActive = false;
+
+		if (textFile.empty())
+		{
+			text.clear();
+			text += key;
+			textFile.push_back(text);
+		}
+		else
+		{
+			textFile[cursorPos.Y - 2].insert(cursorPos.X - 1, 1, key);
+		}
+		ClearScreenBuffer(textFile);
+	}
+	else if (iscntrl(key))
+	{
+		switch (key)
+		{
+		case KEY_ESCAPE:
+			menuIsActive = true;
+			editIsActive = false;
+			return;
+
+		case KEY_ENTER:
+			if (textFile.empty())
+			{
+				text.clear();
+				textFile.push_back(text);
+			}
+			cursorPos.Y++;
+			cout << endl;
+			text.clear();
+			textFile.emplace(textFile.cbegin() + cursorPos.Y - 2, text);
+			ClearScreenBuffer(textFile);
+			cursorPos.X = textFile[cursorPos.Y - 2].length();
+			return;
+
+		case KEY_BACKSPACE:
+
+			if (cursorPos.X == 0 && cursorPos.Y == 2 && textFile.empty())
+			{
+				return;
+			}
+
+			if (cursorPos.X > 0)
+			{
+				cursorPos.X--;
+			}
+			else
+			{
+				if (cursorPos.Y > 2)
+				{
+					cursorPos.X = textFile[cursorPos.Y - 3].length();
+				}
+				else
+				{
+					if (cursorPos.X != 0 && cursorPos.Y != 2)
+					{
+						cursorPos.X = textFile[cursorPos.Y - 1].length();
+					}
+				}
+
+				if (textFile[cursorPos.Y - 2].length() == 0)
+				{
+					textFile.erase(textFile.cbegin() + cursorPos.Y - 2);
+				}
+				if (cursorPos.Y > 2)
+				{
+					cursorPos.Y--;
+				}
+				ClearScreenBuffer(textFile);
+				return;
+			}
+
+			if (textFile[cursorPos.Y - 2].length() > 0)
+			{
+				textFile[cursorPos.Y - 2].erase(cursorPos.X, 1);
+				ClearScreenBuffer(textFile);
+			}
+			return;
+		default:
+			break;
+		}
+	}
+	else
+	{
+		switch (_getch())
+		{
+		case KEY_DOWN:
+			if (cursorPos.Y <= textFile.size())
+			{
+				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 1].length() && cursorPos.X > textFile[cursorPos.Y - 1].length())
+				{
+					cursorPos.X = textFile[cursorPos.Y - 1].length();
+				}
+				cursorPos.Y++;
+				SetConsoleCursorPosition(hStdOut, cursorPos);
+			}
+			break;
+
+		case KEY_UP:
+			if (cursorPos.Y > 2)
+			{
+				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 3].length() && cursorPos.X > textFile[cursorPos.Y - 3].length())
+				{
+					cursorPos.X = textFile[cursorPos.Y - 3].length();
+				}
+				cursorPos.Y--;
+				SetConsoleCursorPosition(hStdOut, cursorPos);
+			}
+			break;
+
+		case KEY_RIGHT:
+			if (textFile.empty() == false)
+			{
+				if (cursorPos.X < textFile[cursorPos.Y - 2].length())
+				{
+					cursorPos.X++;
+
+				}
+				else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
+				{
+					cursorPos.X = 0;
+					cursorPos.Y++;
+				}
+				SetConsoleCursorPosition(hStdOut, cursorPos);
+			}
+			break;
+
+		case KEY_LEFT:
+			if (cursorPos.X > 0)
+			{
+				cursorPos.X--;
+			}
+			else if (cursorPos.X == 0 && cursorPos.Y != 2)
+			{
+				cursorPos.X = textFile[cursorPos.Y - 3].length();
+				cursorPos.Y--;
+			}
+			SetConsoleCursorPosition(hStdOut, cursorPos);
+			break;
+		}
+	}
 }
 
-void openFile(const HANDLE& hStdOut, vector <uint8_t>& lineEndPosition,vector <string>& textFile, string& text, COORD& cursorPos, string& path)
+void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text, 
+	COORD& cursorPos, string& path)
 {
+	if (path.find(".txt") == string::npos)
+	{
+		path += ".txt";
+	}
+	
 	SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 	ifstream file(path);
 
@@ -111,9 +268,8 @@ void openFile(const HANDLE& hStdOut, vector <uint8_t>& lineEndPosition,vector <s
 	else
 	{
 		textFile.clear();
-		ClearAllScreenBuffer();
+		ClearScreenBuffer(textFile);
 		char ch;
-		lineEndPosition.clear();
 		text.clear();
 		cursorPos.X = 0;
 		cursorPos.Y = 2;
@@ -132,7 +288,6 @@ void openFile(const HANDLE& hStdOut, vector <uint8_t>& lineEndPosition,vector <s
 			{
 				textFile.push_back(text);
 				text.clear();
-				lineEndPosition.push_back(cursorPos.X);
 				cout << endl;
 				cursorPos.X = 0;
 				cursorPos.Y++;
@@ -295,6 +450,100 @@ void deleteFile(string& path)
 	}
 }
 
+void specOptions(const HANDLE& hStdOut, vector <string>& textFile, 
+	char& key, COORD& cursorPos)
+{
+	SetConsoleCursorPosition(hStdOut, cursorPos);
+
+	key = _getch();
+
+	if (isprint(key))
+	{
+		int hotKey = _getch();
+
+		if ((key == 'D' && hotKey == 'W') || (key == 'd' && hotKey == 'w'))
+		{
+			deleteWord(textFile, cursorPos);
+		}
+		else if ((key == 'D' && hotKey == 'L') || (key == 'd' && hotKey == 'l'))
+		{
+			deleteLine(textFile, cursorPos);
+		}
+		ClearScreenBuffer(textFile);
+	}
+	else if (iscntrl(key))
+	{
+		switch (key)
+		{
+		case KEY_ESCAPE:
+			menuIsActive = true;
+			specOptionsIsActive = false;
+			return;
+
+		default:
+			break;
+		}
+	}
+	else
+	{
+		switch (_getch())
+		{
+		case KEY_DOWN:
+			if (cursorPos.Y <= textFile.size())
+			{
+				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 1].length() && cursorPos.X > textFile[cursorPos.Y - 1].length())
+				{
+					cursorPos.X = textFile[cursorPos.Y - 1].length();
+				}
+				cursorPos.Y++;
+				SetConsoleCursorPosition(hStdOut, cursorPos);
+			}
+			break;
+
+		case KEY_UP:
+			if (cursorPos.Y > 2)
+			{
+				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 3].length() && cursorPos.X > textFile[cursorPos.Y - 3].length())
+				{
+					cursorPos.X = textFile[cursorPos.Y - 3].length();
+				}
+				cursorPos.Y--;
+				SetConsoleCursorPosition(hStdOut, cursorPos);
+			}
+			break;
+
+		case KEY_RIGHT:
+			if (textFile.empty() == false)
+			{
+				if (cursorPos.X < textFile[cursorPos.Y - 2].length())
+				{
+					cursorPos.X++;
+				}
+				else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
+				{
+					cursorPos.X = 0;
+					cursorPos.Y++;
+				}
+				SetConsoleCursorPosition(hStdOut, cursorPos);
+			}
+			break;
+
+		case KEY_LEFT:
+			if (cursorPos.X > 0)
+			{
+				cursorPos.X--;
+			}
+			else if (cursorPos.X == 0 && cursorPos.Y != 2)
+			{
+				cursorPos.X = textFile[cursorPos.Y - 3].length();
+				cursorPos.Y--;
+			}
+			SetConsoleCursorPosition(hStdOut, cursorPos);
+			break;
+		}
+	}
+}
+
 int main()
 {
 	hStdOutM = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -304,7 +553,6 @@ int main()
 
 	char key;
 	vector <string> textFile;
-	vector <uint8_t> lineEndPosition;
 	string path;
 	string text;
 	HANDLE hStdOut;
@@ -313,7 +561,6 @@ int main()
 	cursorPos.X = 0;
     cursorPos.Y = 2;
 	
-
 	while (true)
 	{
 		if (menuIsActive)
@@ -322,9 +569,7 @@ int main()
 		}
 		else
 		{
-			if (editIsActive || openIsActive || createIsActive || saveIsActive || saveAsIsActive || specOptionsIsActive || deleteIsActive)
-			{
-				if (openIsActive)
+			if (openIsActive)
 				{
 
 					if (!textFile.empty() || !path.empty())
@@ -357,277 +602,27 @@ int main()
 							}
 							continue;
 						}
-					}
-					
-					
+					}				
 					menuIsActive = true;
 					openIsActive = false;
 					editIsActive = true;
-					
+			
 					ClearMenuLines();
 					cout << "Choose file directory or file's name:";
 					cin >> path;
 					SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
-					openFile(hStdOut, lineEndPosition,textFile, text, cursorPos, path);
+					openFile(hStdOut,textFile, text, cursorPos, path);
 					continue;
 				}			
-				if (editIsActive)
-				{		
-					SetConsoleCursorPosition(hStdOut, cursorPos);
-
-					key = _getch();
-
-					if (isprint(key))
-					{				
-
-						if (cursorPos.X < 120)
-						{
-							cursorPos.X++;
-						}
-						else
-						{
-							cursorPos.X = 0;
-							cursorPos.Y++;
-						}
-						
-						
-						if (textFile.empty())
-						{
-							text.clear();
-							text += key;
-							textFile.push_back(text);
-						}
-						else
-						{
-							textFile[cursorPos.Y-2].insert(cursorPos.X-1, 1, key);
-						}
-						ClearScreenBuffer(textFile);
-					}
-					else if (iscntrl(key))
-					{
-						switch (key)
-						{
-						case KEY_ESCAPE:
-							menuIsActive = true;
-							editIsActive = false;
-							continue;
-
-						case KEY_ENTER:
-							if (textFile.empty())
-							{
-								text.clear();							
-								textFile.push_back(text);
-							}						
-							cursorPos.Y++;						
-							cout << endl;
-							text.clear();
-							textFile.emplace(textFile.cbegin() + cursorPos.Y - 2, text);
-							ClearScreenBuffer(textFile);
-							cursorPos.X = textFile[cursorPos.Y - 2].length();
-							continue;
-
-						case KEY_BACKSPACE:
-					
-							if (cursorPos.X == 0 && cursorPos.Y == 2 && textFile.empty())
-							{
-								continue;
-							}
-				
-							if (cursorPos.X > 0)
-							{
-								cursorPos.X--;
-							}
-							else
-							{							
-									if (cursorPos.Y > 2)
-									{
-										cursorPos.X = textFile[cursorPos.Y - 3].length();									
-									}
-									else
-									{
-										if (cursorPos.X != 0 && cursorPos.Y != 2)
-										{
-											cursorPos.X = textFile[cursorPos.Y - 1].length();
-										}
-									}
-															
-									if (textFile[cursorPos.Y - 2].length() == 0)
-									{
-										textFile.erase(textFile.cbegin() + cursorPos.Y - 2);
-									}
-									if (cursorPos.Y > 2)
-									{
-										cursorPos.Y--;
-									}
-									ClearScreenBuffer(textFile);
-									continue;					
-							}
-							
-							if (textFile[cursorPos.Y-2].length() > 0)
-							{
-								textFile[cursorPos.Y-2].erase(cursorPos.X,1);
-								ClearScreenBuffer(textFile);
-							}					
-							continue;
-						default:
-							break;
-						}
-					}
-					else
-					{
-						switch (_getch())
-						{
-						case KEY_DOWN:				
-							if (cursorPos.Y <= textFile.size())
-							{
-								if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 1].length() && cursorPos.X > textFile[cursorPos.Y - 1].length())
-								{
-									cursorPos.X = textFile[cursorPos.Y - 1].length();
-								}								
-								cursorPos.Y++;
-								SetConsoleCursorPosition(hStdOut, cursorPos);
-							}
-							break;
-
-						case KEY_UP:
-							if (cursorPos.Y > 2)
-							{		
-								if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 3].length() && cursorPos.X > textFile[cursorPos.Y - 3].length())
-								{
-										cursorPos.X = textFile[cursorPos.Y - 3].length();
-								}								
-								cursorPos.Y--;
-								SetConsoleCursorPosition(hStdOut, cursorPos);
-							}
-							break;
-
-						case KEY_RIGHT:
-							if (textFile.empty() == false)
-							{
-								if (cursorPos.X < textFile[cursorPos.Y - 2].length())
-								{							
-								cursorPos.X++;
-									
-								}
-								else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
-								{
-									cursorPos.X = 0;
-									cursorPos.Y++;
-								}
-								SetConsoleCursorPosition(hStdOut, cursorPos);
-							}
-							break;
-
-						case KEY_LEFT:
-							if (cursorPos.X > 0)
-							{
-								cursorPos.X--;
-							}
-							else if (cursorPos.X == 0 && cursorPos.Y != 2)
-							{
-								cursorPos.X = textFile[cursorPos.Y - 3].length();
-								cursorPos.Y--;
-							}
-							SetConsoleCursorPosition(hStdOut, cursorPos);
-							break;
-					}
-					}				
+			if (editIsActive)
+				{	
+					editFile(hStdOut, textFile, key, text, cursorPos);
 				}
-				if (specOptionsIsActive)
+			if (specOptionsIsActive)
 				{
-					SetConsoleCursorPosition(hStdOut, cursorPos);
-
-					key = _getch();
-
-					if (isprint(key))
-					{
-						int hotKey = _getch();
-						
-						if ((key == 'D' && hotKey == 'W') || (key == 'd' && hotKey == 'w'))
-						{
-							deleteWord(textFile, cursorPos);
-						}
-						else if ((key == 'D' && hotKey == 'L') || (key == 'd' && hotKey == 'l'))
-						{
-							deleteLine(textFile, cursorPos);
-						}
-						
-						ClearScreenBuffer(textFile);
-					}
-					else if (iscntrl(key))
-					{
-						switch (key)
-						{
-						case KEY_ESCAPE:
-							menuIsActive = true;
-							specOptionsIsActive = false;
-							continue;
-
-						default:
-							break;
-						}
-					}
-					else
-					{
-						switch (_getch())
-						{
-						case KEY_DOWN:
-							if (cursorPos.Y <= textFile.size())
-							{
-								if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 1].length() && cursorPos.X > textFile[cursorPos.Y - 1].length())
-								{
-									cursorPos.X = textFile[cursorPos.Y - 1].length();
-								}
-								cursorPos.Y++;
-								SetConsoleCursorPosition(hStdOut, cursorPos);
-							}
-							break;
-
-						case KEY_UP:
-							if (cursorPos.Y > 2)
-							{
-								if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 3].length() && cursorPos.X > textFile[cursorPos.Y - 3].length())
-								{
-									cursorPos.X = textFile[cursorPos.Y - 3].length();
-								}
-								cursorPos.Y--;
-								SetConsoleCursorPosition(hStdOut, cursorPos);
-							}
-							break;
-
-						case KEY_RIGHT:
-							if (textFile.empty() == false)
-							{
-								if (cursorPos.X < textFile[cursorPos.Y - 2].length())
-								{
-									cursorPos.X++;
-
-								}
-								else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
-								{
-									cursorPos.X = 0;
-									cursorPos.Y++;
-								}
-								SetConsoleCursorPosition(hStdOut, cursorPos);
-							}
-							break;
-
-						case KEY_LEFT:
-							if (cursorPos.X > 0)
-							{
-								cursorPos.X--;
-							}
-							else if (cursorPos.X == 0 && cursorPos.Y != 2)
-							{
-								cursorPos.X = textFile[cursorPos.Y - 3].length();
-								cursorPos.Y--;
-							}
-							SetConsoleCursorPosition(hStdOut, cursorPos);
-							break;
-						}
-					}
+					specOptions(hStdOut, textFile, key, cursorPos);
 				}
-				if (createIsActive)
+			if (createIsActive)
 				{		
 						
 					if (!textFile.empty() || !path.empty())
@@ -669,7 +664,7 @@ int main()
 					cout << "Choose file's name:";
 					cin >> path;
 					createFile(path);
-					openFile(hStdOut, lineEndPosition, textFile, text, cursorPos, path);
+					openFile(hStdOut, textFile, text, cursorPos, path);
 					SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
 					SetConsoleCursorPosition(hStdOutM, { 0,1 });
 					ClearMenuLines();
@@ -677,7 +672,7 @@ int main()
 					Sleep(1000);
 					menuIsActive = true;
 				}
-				if (deleteIsActive)
+			if (deleteIsActive)
 				{
 					menuIsActive = true;
 					deleteIsActive = false;
@@ -688,7 +683,7 @@ int main()
 					path.clear();
 					Sleep(2000);
 				}
-				if (saveIsActive)
+			if (saveIsActive)
 				{
 
 					if (path.empty())
@@ -727,7 +722,7 @@ int main()
 						textFile.clear();
 					}
 				}
-				if (saveAsIsActive)
+			if (saveAsIsActive)
 				{
 					menuIsActive = true;
 					saveAsIsActive = false;
@@ -756,7 +751,6 @@ int main()
 						textFile.clear();
 					}
 				}
-			}
 		}
 	}
 	return 0;
