@@ -244,13 +244,18 @@ void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 	}
 }
 
-void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text, 
-	COORD& cursorPos, string& path)
+void fileExtension(string& path)
 {
 	if (path.find(".txt") == string::npos)
 	{
 		path += ".txt";
 	}
+}
+
+void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text, 
+	COORD& cursorPos, string& path)
+{
+	fileExtension(path);
 	
 	SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 	ifstream file(path);
@@ -316,10 +321,7 @@ void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text,
 
 void createFile(string& path)
 {
-	if (path.find(".txt") == string::npos)
-	{
-		path += ".txt";
-	}
+	fileExtension(path);
 	
 	ofstream file;
 	file.open(path);
@@ -361,10 +363,7 @@ void saveFile(const string& text,vector <string>& textFile, string& path)
 
 void saveFileAs(const vector <string>& textFile, string& path)
 {
-	if (path.find(".txt") == string::npos)
-	{
-		path += ".txt";
-	}
+	fileExtension(path);
 	
 	ofstream file;
 	file.open(path);
@@ -432,10 +431,7 @@ void deleteLine(vector <string>& textFile, COORD& cursorPos)
 
 void deleteFile(string& path)
 {
-	if (path.find(".txt") == string::npos)
-	{
-		path += ".txt";
-	}
+	fileExtension(path);
 	
 	ClearMenuLines();
 	SetConsoleCursorPosition(hStdOutM, { 0, 1 });
