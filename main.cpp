@@ -89,6 +89,59 @@ void cursorOffset(const vector <string>& textFile, COORD& cursorPos, const int o
 	}
 }
 
+void moveKeyArrows(const HANDLE& hStdOut, const vector <string>& textFile, COORD& cursorPos)
+{
+	switch (_getch())
+	{
+	case KEY_DOWN:
+		if (cursorPos.Y <= textFile.size())
+		{
+			cursorOffset(textFile, cursorPos, 1);
+			cursorPos.Y++;
+			SetConsoleCursorPosition(hStdOut, cursorPos);
+		}
+		break;
+
+	case KEY_UP:
+		if (cursorPos.Y > 2)
+		{
+			cursorOffset(textFile, cursorPos, 3);
+			cursorPos.Y--;
+			SetConsoleCursorPosition(hStdOut, cursorPos);
+		}
+		break;
+
+	case KEY_RIGHT:
+		if (!textFile.empty())
+		{
+			if (cursorPos.X < textFile[cursorPos.Y - 2].length())
+			{
+				cursorPos.X++;
+			}
+			else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
+			{
+				cursorPos.X = 0;
+				cursorPos.Y++;
+			}
+			SetConsoleCursorPosition(hStdOut, cursorPos);
+		}
+		break;
+
+	case KEY_LEFT:
+		if (cursorPos.X > 0)
+		{
+			cursorPos.X--;
+		}
+		else if (cursorPos.X == 0 && cursorPos.Y != 2)
+		{
+			cursorPos.X = textFile[cursorPos.Y - 3].length();
+			cursorPos.Y--;
+		}
+		SetConsoleCursorPosition(hStdOut, cursorPos);
+		break;
+	}
+}
+
 void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 	string& text, COORD& cursorPos)
 {
@@ -194,56 +247,7 @@ void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 	}
 	else
 	{
-		switch (_getch())
-		{
-		case KEY_DOWN:
-			if (cursorPos.Y <= textFile.size())
-			{
-				cursorOffset(textFile, cursorPos, 1);
-				cursorPos.Y++;
-				SetConsoleCursorPosition(hStdOut, cursorPos);
-			}
-			break;
-
-		case KEY_UP:
-			if (cursorPos.Y > 2)
-			{
-				cursorOffset(textFile, cursorPos, 3);
-				cursorPos.Y--;
-				SetConsoleCursorPosition(hStdOut, cursorPos);
-			}
-			break;
-
-		case KEY_RIGHT:
-			if (textFile.empty() == false)
-			{
-				if (cursorPos.X < textFile[cursorPos.Y - 2].length())
-				{
-					cursorPos.X++;
-
-				}
-				else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
-				{
-					cursorPos.X = 0;
-					cursorPos.Y++;
-				}
-				SetConsoleCursorPosition(hStdOut, cursorPos);
-			}
-			break;
-
-		case KEY_LEFT:
-			if (cursorPos.X > 0)
-			{
-				cursorPos.X--;
-			}
-			else if (cursorPos.X == 0 && cursorPos.Y != 2)
-			{
-				cursorPos.X = textFile[cursorPos.Y - 3].length();
-				cursorPos.Y--;
-			}
-			SetConsoleCursorPosition(hStdOut, cursorPos);
-			break;
-		}
+		moveKeyArrows(hStdOut, textFile, cursorPos);
 	}
 }
 
@@ -435,8 +439,8 @@ void deleteWord(vector <string>& textFile, COORD& cursorPos)
 	char SPACE = ' ';
 	while (cursorPos.X > 0 && textFile[cursorPos.Y - 2].at(cursorPos.X - 1) != SPACE)
 	{	
-			textFile[cursorPos.Y - 2].erase(cursorPos.X - 1, 1);
-				cursorPos.X--;
+			textFile[cursorPos.Y - 2].erase(cursorPos.X - 1, 1);          //
+				cursorPos.X--;												//
 	}
 	while (cursorPos.X > 0 && textFile[cursorPos.Y - 2].at(cursorPos.X - 1) == SPACE)
 	{
@@ -445,8 +449,8 @@ void deleteWord(vector <string>& textFile, COORD& cursorPos)
 	}
 	if (textFile[cursorPos.Y - 2].length()  == 0 && cursorPos.Y > 2)
 	{
-		cursorPos.X = textFile[cursorPos.Y - 3].length();
-		textFile.erase(textFile.cbegin() + cursorPos.Y - 2);
+		cursorPos.X = textFile[cursorPos.Y - 3].length();					//
+		textFile.erase(textFile.cbegin() + cursorPos.Y - 2);				//
 		cursorPos.Y--;
 	}
 }
@@ -486,7 +490,7 @@ void deleteFile(string& path)
 	}
 }
 
-void specOptions(const HANDLE& hStdOut, vector <string>& textFile, 
+void specOptions(HANDLE& hStdOut, vector <string>& textFile, 
 	char& key, COORD& cursorPos)
 {
 	SetConsoleCursorPosition(hStdOut, cursorPos);
@@ -522,55 +526,7 @@ void specOptions(const HANDLE& hStdOut, vector <string>& textFile,
 	}
 	else
 	{
-		switch (_getch())
-		{
-		case KEY_DOWN:
-			if (cursorPos.Y <= textFile.size())
-			{
-				cursorOffset(textFile, cursorPos, 1);
-				cursorPos.Y++;
-				SetConsoleCursorPosition(hStdOut, cursorPos);
-			}
-			break;
-
-		case KEY_UP:
-			if (cursorPos.Y > 2)
-			{
-				cursorOffset(textFile, cursorPos, 3);
-				cursorPos.Y--;
-				SetConsoleCursorPosition(hStdOut, cursorPos);
-			}
-			break;
-
-		case KEY_RIGHT:
-			if (textFile.empty() == false)
-			{
-				if (cursorPos.X < textFile[cursorPos.Y - 2].length())
-				{
-					cursorPos.X++;
-				}
-				else if (cursorPos.X == textFile[cursorPos.Y - 2].length() && cursorPos.Y <= textFile.size())
-				{
-					cursorPos.X = 0;
-					cursorPos.Y++;
-				}
-				SetConsoleCursorPosition(hStdOut, cursorPos);
-			}
-			break;
-
-		case KEY_LEFT:
-			if (cursorPos.X > 0)
-			{
-				cursorPos.X--;
-			}
-			else if (cursorPos.X == 0 && cursorPos.Y != 2)
-			{
-				cursorPos.X = textFile[cursorPos.Y - 3].length();
-				cursorPos.Y--;
-			}
-			SetConsoleCursorPosition(hStdOut, cursorPos);
-			break;
-		}
+		moveKeyArrows(hStdOut, textFile, cursorPos);
 	}
 }
 
