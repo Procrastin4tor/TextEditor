@@ -4,6 +4,7 @@ extern bool editIsActive, openIsActive, createIsActive, saveIsActive, saveAsIsAc
 extern bool menuIsActive;
 extern bool CleanScreenBufferIsActive;
 extern bool saveChangesForCreate, saveChangesForOpen;
+extern const int menuLine;
 
 extern HANDLE hStdOutM;
 extern WORD workWindowAttributes;

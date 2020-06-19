@@ -187,7 +187,7 @@ void drawSaveError()
 					menuIsActive = false;
 					SetConsoleCursorPosition(hStdOutM, { 0,1 });
 					SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
-					for (int i = 0; i < 120; i++)
+					for (int i = 0; i < menuLine; i++)
 					{
 						cout << " ";
 					}
@@ -491,7 +491,7 @@ void drawHelp()
 
 void drawExit()
 {
-	if (menuIsActive == false)
+	if (!menuIsActive)
 	{
 		return;
 	}
@@ -592,7 +592,7 @@ void DrawMenu()
 	SetConsoleCursorPosition(hStdOutM, { 0,0 });
 	SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
 
-	for (int i = 0; i < 240; i++)
+	for (int i = 0; i < menuLine * 2; i++)
 	{
 		cout << " ";
 	}

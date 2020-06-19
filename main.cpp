@@ -22,12 +22,13 @@ extern WORD workWindowAttributes;
 ifstream file;
 
 bool menuIsActive = true;
-bool editIsActive = false, openIsActive = false, createIsActive = false, 
-saveIsActive = false, saveAsIsActive = false, specOptionsIsActive = false, 
-deleteIsActive = false;
+bool editIsActive = false, openIsActive = false, createIsActive = false,
+saveIsActive = false, saveAsIsActive = false, specOptionsIsActive = false,
+deleteIsActive = false, saveErrorIsActive = false;
 bool firstEnter = true;
 bool saveChangesForCreate = false, saveChangesForOpen = false;
 bool CleanScreenBufferIsActive = false;
+const int menuLine = 120;
 
 bool menu()
 {
@@ -48,7 +49,7 @@ void ClearMenuLines()
 {
 	SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
 	SetConsoleCursorPosition(hStdOutM, { 0,1 });
-	for (int i = 0; i < 120; i++)
+	for (int i = 0; i < menuLine; i++)
 	{
 		cout << " ";
 	}
@@ -80,6 +81,14 @@ void ClearScreenBuffer(const vector <string>& textFile)
 	CleanScreenBufferIsActive = false;
 }
 
+void cursorOffset(const vector <string>& textFile, COORD& cursorPos, const int offset)
+{
+	if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - offset].length() && cursorPos.X > textFile[cursorPos.Y - offset].length())
+	{
+		cursorPos.X = textFile[cursorPos.Y - offset].length();
+	}
+}
+
 void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 	string& text, COORD& cursorPos)
 {
@@ -90,7 +99,7 @@ void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 	if (isprint(key))
 	{
 
-		if (cursorPos.X < 120)
+		if (cursorPos.X < menuLine)
 		{
 			cursorPos.X++;
 		}
@@ -190,10 +199,7 @@ void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 		case KEY_DOWN:
 			if (cursorPos.Y <= textFile.size())
 			{
-				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 1].length() && cursorPos.X > textFile[cursorPos.Y - 1].length())
-				{
-					cursorPos.X = textFile[cursorPos.Y - 1].length();
-				}
+				cursorOffset(textFile, cursorPos, 1);
 				cursorPos.Y++;
 				SetConsoleCursorPosition(hStdOut, cursorPos);
 			}
@@ -202,10 +208,7 @@ void editFile(const HANDLE& hStdOut,vector <string>& textFile, char& key,
 		case KEY_UP:
 			if (cursorPos.Y > 2)
 			{
-				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 3].length() && cursorPos.X > textFile[cursorPos.Y - 3].length())
-				{
-					cursorPos.X = textFile[cursorPos.Y - 3].length();
-				}
+				cursorOffset(textFile, cursorPos, 3);
 				cursorPos.Y--;
 				SetConsoleCursorPosition(hStdOut, cursorPos);
 			}
@@ -252,6 +255,39 @@ void fileExtension(string& path)
 	}
 }
 
+void saveErrorCheck(string& path)
+{
+	ClearMenuLines();
+	
+	if (openIsActive)
+	{
+		cout << "File doesn't exist! Please, try again.";
+		openIsActive = true;
+		saveChangesForOpen = false;
+	}	
+	else if (createIsActive)
+	{
+		cout << "Can't create a new file! Please, try again.";
+		createIsActive = true;
+		saveChangesForCreate = false;
+	}
+	else
+	{
+		if (saveIsActive)
+		{
+			cout << "Can't save a file! Please, try again.";
+			saveIsActive = true;
+		}
+		else
+		{
+			cout << "Can't save a new file! Please, try again.";
+			saveAsIsActive = true;
+		}
+	}
+	path.clear();
+	Sleep(2000);
+}
+
 void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text, 
 	COORD& cursorPos, string& path)
 {
@@ -262,12 +298,7 @@ void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text,
 
 	if (!file.is_open())
 	{
-		ClearMenuLines();
-		cout << "File doesn't exist! Please, try again.";
-		openIsActive = true;
-		saveChangesForOpen = false;
-		path.clear();
-		Sleep(2000);
+		saveErrorCheck(path);
 		return;
 	}
 	else
@@ -298,7 +329,7 @@ void openFile(const HANDLE& hStdOut,vector <string>& textFile, string& text,
 				cursorPos.Y++;
 				continue;
 			}
-			if (cursorPos.X < 120)
+			if (cursorPos.X < menuLine)
 			{
 				cursorPos.X++;
 			}
@@ -327,28 +358,19 @@ void createFile(string& path)
 	file.open(path);
 	if (!file.is_open())
 	{
-		ClearMenuLines();
-		cout << "Can't create a new file! Please, try again.";
-		createIsActive = true;
-		saveChangesForCreate = false;
-		path.clear();
-		Sleep(2000);
+		saveErrorCheck(path);
 		return;
 	}
 	file.close();
 }
 
-void saveFile(const string& text,vector <string>& textFile, string& path)
+void saveFile(vector <string>& textFile, string& path)
 {
 	ofstream file;
 	file.open(path);
 	if (!file.is_open())
 	{
-		ClearMenuLines();
-		cout << "Can't save a new file! Please, try again.";
-		saveIsActive = true;
-		path.clear();
-		Sleep(2000);
+		saveErrorCheck(path);
 		return;
 	}
 	else
@@ -361,29 +383,47 @@ void saveFile(const string& text,vector <string>& textFile, string& path)
 	}
 }
 
-void saveFileAs(const vector <string>& textFile, string& path)
+void saveChanges(vector <string>& textFile, string& path)
 {
-	fileExtension(path);
-	
-	ofstream file;
-	file.open(path);
-	if (!file.is_open())
+	if (saveChangesForCreate || saveChangesForOpen)
 	{
-		ClearMenuLines();
-		cout << "Can't save a file! Please, try again.";
-		saveIsActive = true;
-		path.clear();
-		Sleep(2000);
-		return;
-	}
-	else
-	{
-		for (int i = 0; i < textFile.size(); i++)
+		if (saveChangesForCreate)
 		{
-			file << textFile[i] << endl;
+			createIsActive = true;
+			saveChangesForCreate = false;
 		}
-		file.close();
+		else
+		{
+			openIsActive = true;
+			saveChangesForOpen = false;
+		}
+		menuIsActive = false;
+		path.clear();
+		textFile.clear();
 	}
+}
+
+void unsavedDataCheck(vector <string>& textFile, string& path)
+{
+		menuIsActive = true;
+		ClearMenuLines();
+		
+		if (!path.empty())
+		{
+			cout << "There is unsaved data. Do you want to save changes in " << path << " ?";
+			saveIsActive = true;
+		}
+		else
+		{
+			cout << "There is unsaved data. Do you want to save it as a new file?";
+			saveAsIsActive = true;
+		}
+		drawSaveChanges();
+		if (!saveChangesForOpen || !saveChangesForCreate)
+		{
+			path.clear();
+			textFile.clear();
+		}
 }
 
 void deleteWord(vector <string>& textFile, COORD& cursorPos)
@@ -487,10 +527,7 @@ void specOptions(const HANDLE& hStdOut, vector <string>& textFile,
 		case KEY_DOWN:
 			if (cursorPos.Y <= textFile.size())
 			{
-				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 1].length() && cursorPos.X > textFile[cursorPos.Y - 1].length())
-				{
-					cursorPos.X = textFile[cursorPos.Y - 1].length();
-				}
+				cursorOffset(textFile, cursorPos, 1);
 				cursorPos.Y++;
 				SetConsoleCursorPosition(hStdOut, cursorPos);
 			}
@@ -499,10 +536,7 @@ void specOptions(const HANDLE& hStdOut, vector <string>& textFile,
 		case KEY_UP:
 			if (cursorPos.Y > 2)
 			{
-				if (textFile[cursorPos.Y - 2].length() > textFile[cursorPos.Y - 3].length() && cursorPos.X > textFile[cursorPos.Y - 3].length())
-				{
-					cursorPos.X = textFile[cursorPos.Y - 3].length();
-				}
+				cursorOffset(textFile, cursorPos, 3);
 				cursorPos.Y--;
 				SetConsoleCursorPosition(hStdOut, cursorPos);
 			}
@@ -567,40 +601,12 @@ int main()
 		{
 			if (openIsActive)
 				{
-
 					if (!textFile.empty() || !path.empty())
 					{
-						menuIsActive = true;
-
-						if (!path.empty())
-						{
-							ClearMenuLines();
-							cout << "There is unsaved data. Do you want to save changes in " << path << " ?";
-							saveIsActive = true;
-							drawSaveChanges();
-							if (!saveChangesForOpen)
-							{
-								path.clear();
-								textFile.clear();
-							}
-							continue;
-						}
-						else
-						{
-							ClearMenuLines();
-							cout << "There is unsaved data. Do you want to save it as a new file?";
-							saveAsIsActive = true;
-							drawSaveChanges();
-							if (!saveChangesForOpen)
-							{
-								path.clear();
-								textFile.clear();
-							}
-							continue;
-						}
+						unsavedDataCheck(textFile, path);
+						continue;
 					}				
 					menuIsActive = true;
-					openIsActive = false;
 					editIsActive = true;
 			
 					ClearMenuLines();
@@ -608,6 +614,10 @@ int main()
 					cin >> path;
 					SetConsoleTextAttribute(hStdOutM, workWindowAttributes);
 					openFile(hStdOut,textFile, text, cursorPos, path);
+					if (!saveErrorIsActive)
+					{
+						openIsActive = false;
+					}
 					continue;
 				}			
 			if (editIsActive)
@@ -619,47 +629,22 @@ int main()
 					specOptions(hStdOut, textFile, key, cursorPos);
 				}
 			if (createIsActive)
-				{		
-						
-					if (!textFile.empty() || !path.empty())
-					{
-						menuIsActive = true;
-						
-						if (!path.empty())
-						{						
-							ClearMenuLines();
-							cout << "There is unsaved data. Do you want to save changes in " << path << " ?";
-							saveIsActive = true;
-							drawSaveChanges();
-							if (!saveChangesForCreate)
-							{
-								path.clear();
-								textFile.clear();
-							}
-							continue;
-						}
-						else
-						{
-							ClearMenuLines();
-							cout << "There is unsaved data. Do you want to save it as a new file?";
-							saveAsIsActive = true;
-							drawSaveChanges();
-							if (!saveChangesForCreate)
-							{
-								path.clear();
-								textFile.clear();
-							}
-							continue;
-						}
-					}
-					
+			{							
+				if (!textFile.empty() || !path.empty())
+				{
+					unsavedDataCheck(textFile, path);
+					continue;
+				}				
 					menuIsActive = true;
-					createIsActive = false;
 					editIsActive = true;
 					ClearMenuLines();
 					cout << "Choose file's name:";
 					cin >> path;
 					createFile(path);
+					if (!saveErrorIsActive)
+					{
+						createIsActive = false;
+					}
 					openFile(hStdOut, textFile, text, cursorPos, path);
 					SetConsoleTextAttribute(hStdOutM, nonWorkWindowAttributes);
 					SetConsoleCursorPosition(hStdOutM, { 0,1 });
@@ -669,84 +654,57 @@ int main()
 					menuIsActive = true;
 				}
 			if (deleteIsActive)
-				{
-					menuIsActive = true;
-					deleteIsActive = false;
-					ClearMenuLines();
-					cout << "Choose file's name that will be deleted:";
-					cin >> path;
-					deleteFile(path);
-					path.clear();
-					Sleep(2000);
-				}
+			{
+				menuIsActive = true;
+				deleteIsActive = false;
+				ClearMenuLines();
+				cout << "Choose file's name that will be deleted:";
+				cin >> path;
+				deleteFile(path);
+				path.clear();
+				Sleep(2000);
+			}
 			if (saveIsActive)
-				{
-
-					if (path.empty())
-					{
-						menuIsActive = true;
-						saveIsActive = false;
-						ClearMenuLines();
-						cout << "File doesn't open! What do you want to do:";
-						drawSaveError();	
-					}
-					else
-					{
-						menuIsActive = true;
-						saveIsActive = false;
-						ClearMenuLines();
-						cout << "File was saved successfully!!!";
-						Sleep(1000);
-						saveFile(text, textFile, path);
-					}
-					file.close();		
-
-					if (saveChangesForCreate)
-					{
-						menuIsActive = false;
-						createIsActive = true;
-						saveChangesForCreate = false;
-						path.clear();
-						textFile.clear();
-					}
-					else if (saveChangesForOpen)
-					{
-						menuIsActive = false;
-						openIsActive = true;
-						saveChangesForOpen = false;
-						path.clear();
-						textFile.clear();
-					}
-				}
-			if (saveAsIsActive)
+			{
+				if (path.empty())
 				{
 					menuIsActive = true;
-					saveAsIsActive = false;
+					saveIsActive = false;
 					ClearMenuLines();
-					cout << "Choose a new file's name:";
-					cin >> path;
-					saveFileAs(textFile, path);
-					ClearMenuLines();
-					cout << "New file was saved successfully!!!";
-					Sleep(2000);
-
-					if (saveChangesForCreate)
-					{
-						menuIsActive = false;
-						createIsActive = true;
-						saveChangesForCreate = false;
-						path.clear();
-						textFile.clear();
-					}
-					else if (saveChangesForOpen)
-					{
-						menuIsActive = false;
-						openIsActive = true;
-						saveChangesForOpen = false;
-						path.clear();
-						textFile.clear();
-					}
+					cout << "File doesn't open! What do you want to do:";
+					drawSaveError();	
 				}
+				else
+				{
+					menuIsActive = true;
+					ClearMenuLines();
+					saveFile(textFile, path);
+					if (!saveErrorIsActive)
+					{
+						saveIsActive = false;
+					}
+					cout << "File was saved successfully!!!";
+					Sleep(1000);
+				}
+				file.close();		
+				saveChanges(textFile, path);
+			}
+			if (saveAsIsActive)
+			{
+				menuIsActive = true;
+				ClearMenuLines();
+				cout << "Choose a new file's name:";
+				cin >> path;
+				saveFile(textFile, path);
+				if (!saveErrorIsActive)
+				{
+					saveAsIsActive = false;
+				}
+				ClearMenuLines();
+				cout << "New file was saved successfully!!!";
+				Sleep(2000);
+				saveChanges(textFile, path);
+			}
 		}
 	}
 	return 0;
